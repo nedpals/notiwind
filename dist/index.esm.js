@@ -2654,8 +2654,7 @@ function install(app) {
 }
 
 var index = {
-    install,
-    notify
+    install
 };
 
-export { index as default };
+export { index as default, notify };

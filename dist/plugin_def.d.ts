@@ -4,4 +4,3 @@ declare module '@vue/runtime-core' {
         $notify: typeof notify;
     }
 }
-export {};
