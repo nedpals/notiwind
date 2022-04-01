@@ -1,8 +1,9 @@
-<script>
-export default {
+import { defineComponent } from "@vue/runtime-core"
+
+export default defineComponent({
   provide() {
     return {
-      ['context']: { group: this.group, position: this.position },
+      context: { group: this.group, position: this.position },
     }
   },
   props: {
@@ -13,16 +14,14 @@ export default {
     position: {
       type: String,
       default: 'top',
-      validator(value) {
+      validator(value: string) {
         return ['top', 'bottom'].includes(value)
       },
     },
   },
   render() {
-    return this.$slots.default({
+    return this.$slots.default?.({
       group: this.group,
     })
   },
-}
-</script>
-
+})

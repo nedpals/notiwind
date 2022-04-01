@@ -1,10 +1,12 @@
 /* eslint-disable vue/component-definition-name-casing */
 
-import Notification from './Notification.vue'
-import NotificationGroup from './NotificationGroup.vue'
+import { App } from 'vue'
+
+import Notification from './components/Notification'
+import NotificationGroup from './components/NotificationGroup'
 import { notify } from './notify'
 
-export function install(app) {
+export function install(app: App) {
   app.config.globalProperties.$notify = notify
   app.component('Notification', Notification)
   app.component('NotificationGroup', NotificationGroup)

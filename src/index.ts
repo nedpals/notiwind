@@ -1,6 +1,7 @@
 import { install } from './plugin'
-export { notify } from './notify'
+import { notify } from './notify'
 
 export default {
   install,
+  notify
 }

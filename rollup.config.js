@@ -1,10 +1,11 @@
-import vue from 'rollup-plugin-vue'
+// import vue from 'rollup-plugin-vue'
 import peerDepsExternal from 'rollup-plugin-peer-deps-external'
 import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
+// import commonjs from '@rollup/plugin-commonjs'
+import typescript from 'rollup-plugin-typescript2';
 
 export default {
-  input: 'src/index.js',
+  input: 'src/index.ts',
   output:  [
     {
       file: 'dist/index.common.js',
@@ -16,9 +17,12 @@ export default {
     },
   ],
   plugins: [
-    vue(),
+    // vue(),
     resolve(),
     peerDepsExternal(),
-    commonjs()
+    // commonjs(),
+    typescript({
+      tsconfig: 'tsconfig.json'
+    })
   ],
 };
