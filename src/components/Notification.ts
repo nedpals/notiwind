@@ -46,8 +46,8 @@ export default defineComponent({
   emits: ['close'],
   setup(props, { emit }) {
     const context = inject('context', { group: '', position: 'top' })
-    const notifications = ref<NotificationItem[]>([])
-    const notificationsByGroup = computed<NotificationItem[]>(() => notifications.value.filter((n) => n.group === context.group))
+    const notifications = ref<NotificationItem<any>[]>([])
+    const notificationsByGroup = computed<NotificationItem<any>[]>(() => notifications.value.filter((n) => n.group === context.group))
     const sortedNotifications = computed(() => {
       if (context.position === 'bottom') {
         return [...notificationsByGroup.value]
@@ -60,7 +60,7 @@ export default defineComponent({
         .slice(0, props.maxNotifications)
     })
 
-    const add = ({ notification, timeout }: { notification: NotificationItem, timeout: number }) => {
+    const add = <T>({ notification, timeout }: { notification: NotificationItem<T>, timeout: number }) => {
       notifications.value.push(notification)
       setTimeout(() => {
         remove(notification.id!)

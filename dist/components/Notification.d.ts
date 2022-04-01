@@ -51,10 +51,10 @@ declare const _default: import("vue").DefineComponent<{
         data?: any;
         clean?: boolean | undefined;
     }[]>;
-    sortedNotifications: import("vue").ComputedRef<NotificationItem[]>;
-    notificationsByGroup: import("vue").ComputedRef<NotificationItem[]>;
-    add: ({ notification, timeout }: {
-        notification: NotificationItem;
+    sortedNotifications: import("vue").ComputedRef<NotificationItem<any>[]>;
+    notificationsByGroup: import("vue").ComputedRef<NotificationItem<any>[]>;
+    add: <T>({ notification, timeout }: {
+        notification: NotificationItem<T>;
         timeout: number;
     }) => void;
     close: (id: number) => void;

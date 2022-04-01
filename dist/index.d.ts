@@ -1,6 +1,7 @@
 import { install } from './plugin';
+import { notify } from './notify';
 declare const _default: {
     install: typeof install;
-    notify: (notification: import("./notify").NotificationItem, timeout: number) => number;
+    notify: typeof notify;
 };
 export default _default;

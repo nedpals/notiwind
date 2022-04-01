@@ -1,13 +1,13 @@
 import { events } from './events'
 
-export interface NotificationItem {
+export interface NotificationItem<T> {
   id?: number,
   title?: string,
   text: string,
   type: string,
   group?: string,
   speed?: number,
-  data?: any,
+  data?: T,
   clean?: boolean
 }
 
@@ -17,7 +17,7 @@ const generateId = () => {
   return count++
 }
 
-export const notify = (notification: NotificationItem, timeout: number): number => {
+export function notify<T>(notification: NotificationItem<T>, timeout: number): number {
   if (!notification.id) {
     notification.id = generateId()
   }

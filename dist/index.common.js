@@ -2636,14 +2636,14 @@ let count = 0;
 const generateId = () => {
     return count++;
 };
-const notify = (notification, timeout) => {
+function notify(notification, timeout) {
     if (!notification.id) {
         notification.id = generateId();
     }
     notification.group = notification.group || '';
     events.emit('notify', { notification, timeout });
     return notification.id;
-};
+}
 
 /* eslint-disable vue/component-definition-name-casing */
 function install(app) {

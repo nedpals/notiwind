@@ -1,11 +1,11 @@
-export interface NotificationItem {
+export interface NotificationItem<T> {
     id?: number;
     title?: string;
     text: string;
     type: string;
     group?: string;
     speed?: number;
-    data?: any;
+    data?: T;
     clean?: boolean;
 }
-export declare const notify: (notification: NotificationItem, timeout: number) => number;
+export declare function notify<T>(notification: NotificationItem<T>, timeout: number): number;

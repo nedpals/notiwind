@@ -2,7 +2,7 @@ import { Emitter } from 'mitt';
 import { NotificationItem } from './notify';
 declare type Events = {
     notify: {
-        notification: NotificationItem;
+        notification: NotificationItem<any>;
         timeout: number;
     };
 };

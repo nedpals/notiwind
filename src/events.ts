@@ -3,7 +3,7 @@ import { NotificationItem } from './notify'
 
 type Events = {
   notify: {
-    notification: NotificationItem,
+    notification: NotificationItem<any>,
     timeout: number
   }
 }
