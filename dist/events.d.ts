@@ -5,6 +5,9 @@ declare type Events = {
         notification: NotificationItem<any>;
         timeout: number;
     };
+    closeNotification: {
+        id: number;
+    };
 };
 export declare const events: Emitter<Events>;
 export {};

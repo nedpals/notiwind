@@ -4,109 +4,6 @@ function mitt(n){return {all:n=n||new Map,on:function(t,e){var i=n.get(t);i?i.pu
 
 const events = mitt();
 
-const DEFAULT_TIMEOUT = 3000;
-var Notification = defineComponent$1({
-    props: {
-        maxNotifications: {
-            type: Number,
-            default: 10,
-        },
-        enter: {
-            type: String,
-            default: ''
-        },
-        enterFrom: {
-            type: String,
-            default: ''
-        },
-        enterTo: {
-            type: String,
-            default: ''
-        },
-        leave: {
-            type: String,
-            default: ''
-        },
-        leaveFrom: {
-            type: String,
-            default: ''
-        },
-        leaveTo: {
-            type: String,
-            default: ''
-        },
-        move: {
-            type: String,
-            default: ''
-        },
-        moveDelay: {
-            type: String,
-            default: ''
-        }
-    },
-    emits: ['close'],
-    setup(props, { emit }) {
-        const context = inject('context', { group: '', position: 'top' });
-        const notifications = ref([]);
-        const notificationsByGroup = computed(() => notifications.value.filter((n) => n.group === context.group));
-        const sortedNotifications = computed(() => {
-            if (context.position === 'bottom') {
-                return [...notificationsByGroup.value]
-                    .slice(0, props.maxNotifications);
-            }
-            // if not bottom reverse the array
-            return [...notificationsByGroup.value]
-                .reverse()
-                .slice(0, props.maxNotifications);
-        });
-        const add = ({ notification, timeout }) => {
-            notifications.value.push(notification);
-            setTimeout(() => {
-                remove(notification.id);
-            }, timeout || DEFAULT_TIMEOUT);
-        };
-        const close = (id) => {
-            emit('close');
-            remove(id);
-        };
-        const remove = (id) => {
-            notifications.value.splice(notifications.value.findIndex(n => n.id === id), 1);
-        };
-        return {
-            context,
-            notifications,
-            sortedNotifications,
-            notificationsByGroup,
-            add,
-            close,
-            remove
-        };
-    },
-    mounted() {
-        events.on('notify', this.add);
-    },
-    render() {
-        return h(TransitionGroup, {
-            'enter-active-class': this.notificationsByGroup.length > 1
-                ? [this.enter, this.moveDelay].join(' ')
-                : this.enter,
-            'enter-from-class': this.enterFrom,
-            'enter-to-class': this.enterTo,
-            'leave-active-class': this.leave,
-            'leave-from-class': this.leaveFrom,
-            'leave-to-class': this.leaveTo,
-            'move-class': this.move,
-        }, {
-            default: () => {
-                return this.$slots.default?.({
-                    notifications: this.sortedNotifications,
-                    close: this.close,
-                });
-            }
-        });
-    },
-});
-
 /**
  * Make a map and return a function for checking if a key
  * is in that map.
@@ -253,6 +150,10 @@ const getGlobalThis = () => {
                             : {}));
 };
 
+function warn$1(msg, ...args) {
+    console.warn(`[Vue warn] ${msg}`, ...args);
+}
+
 let activeEffectScope;
 function recordEffectScope(effect, scope = activeEffectScope) {
     if (scope && scope.active) {
@@ -350,10 +251,17 @@ class ReactiveEffect {
             activeEffect = this.parent;
             shouldTrack = lastShouldTrack;
             this.parent = undefined;
+            if (this.deferStop) {
+                this.stop();
+            }
         }
     }
     stop() {
-        if (this.active) {
+        // stopped while running itself - defer the cleanup
+        if (activeEffect === this) {
+            this.deferStop = true;
+        }
+        else if (this.active) {
             cleanupEffect(this);
             if (this.onStop) {
                 this.onStop();
@@ -413,9 +321,7 @@ function trackEffects(dep, debuggerEventExtraInfo) {
         dep.add(activeEffect);
         activeEffect.deps.push(dep);
         if ((process.env.NODE_ENV !== 'production') && activeEffect.onTrack) {
-            activeEffect.onTrack(Object.assign({
-                effect: activeEffect
-            }, debuggerEventExtraInfo));
+            activeEffect.onTrack(Object.assign({ effect: activeEffect }, debuggerEventExtraInfo));
         }
     }
 }
@@ -518,7 +424,9 @@ function triggerEffects(dep, debuggerEventExtraInfo) {
 }
 
 const isNonTrackableKeys = /*#__PURE__*/ makeMap(`__proto__,__v_isRef,__isVue`);
-const builtInSymbols = new Set(Object.getOwnPropertyNames(Symbol)
+const builtInSymbols = new Set(
+/*#__PURE__*/
+Object.getOwnPropertyNames(Symbol)
     .map(key => Symbol[key])
     .filter(isSymbol));
 const get = /*#__PURE__*/ createGetter();
@@ -668,13 +576,13 @@ const readonlyHandlers = {
     get: readonlyGet,
     set(target, key) {
         if ((process.env.NODE_ENV !== 'production')) {
-            console.warn(`Set operation on key "${String(key)}" failed: target is readonly.`, target);
+            warn$1(`Set operation on key "${String(key)}" failed: target is readonly.`, target);
         }
         return true;
     },
     deleteProperty(target, key) {
         if ((process.env.NODE_ENV !== 'production')) {
-            console.warn(`Delete operation on key "${String(key)}" failed: target is readonly.`, target);
+            warn$1(`Delete operation on key "${String(key)}" failed: target is readonly.`, target);
         }
         return true;
     }
@@ -1093,7 +1001,6 @@ function proxyRefs(objectWithRefs) {
         ? objectWithRefs
         : new Proxy(objectWithRefs, shallowUnwrapHandlers);
 }
-Promise.resolve();
 
 const stack = [];
 function pushWarningContext(vnode) {
@@ -1329,7 +1236,7 @@ let preFlushIndex = 0;
 const pendingPostFlushCbs = [];
 let activePostFlushCbs = null;
 let postFlushIndex = 0;
-const resolvedPromise = Promise.resolve();
+const resolvedPromise = /*#__PURE__*/ Promise.resolve();
 let currentFlushPromise = null;
 let currentPreFlushParentJob = null;
 const RECURSION_LIMIT = 100;
@@ -1662,6 +1569,28 @@ function queueEffectWithSuspense(fn, suspense) {
     }
     else {
         queuePostFlushCb(fn);
+    }
+}
+
+function provide(key, value) {
+    if (!currentInstance) {
+        if ((process.env.NODE_ENV !== 'production')) {
+            warn(`provide() can only be used inside setup().`);
+        }
+    }
+    else {
+        let provides = currentInstance.provides;
+        // by default an instance inherits its parent's provides object
+        // but when it needs to provide values of its own, it creates its
+        // own provides object using parent provides object as prototype.
+        // this way in `inject` we can simply look up injections from direct
+        // parent and let the prototype chain do the work.
+        const parentProvides = currentInstance.parent && currentInstance.parent.provides;
+        if (parentProvides === provides) {
+            provides = currentInstance.provides = Object.create(parentProvides);
+        }
+        // TS doesn't allow symbol as index type
+        provides[key] = value;
     }
 }
 // initial value for watchers to trigger on undefined initial values
@@ -2352,7 +2281,10 @@ const getPublicInstance = (i) => {
         return getExposeProxy(i) || i.proxy;
     return getPublicInstance(i.parent);
 };
-const publicPropertiesMap = extend(Object.create(null), {
+const publicPropertiesMap = 
+// Move PURE marker to new line to workaround compiler discarding it
+// due to type annotation
+/*#__PURE__*/ extend(Object.create(null), {
     $: i => i,
     $el: i => i.vnode.el,
     $data: i => i.data,
@@ -2525,9 +2457,10 @@ const PublicInstanceProxyHandlers = {
     },
     defineProperty(target, key, descriptor) {
         if (descriptor.get != null) {
-            this.set(target, key, descriptor.get(), null);
+            // invalidate key cache of a getter based property #5417
+            target._.accessCache[key] = 0;
         }
-        else if (descriptor.value != null) {
+        else if (hasOwn(descriptor, 'value')) {
             this.set(target, key, descriptor.value, null);
         }
         return Reflect.defineProperty(target, key, descriptor);
@@ -2604,12 +2537,8 @@ function isClassComponent(value) {
 
 Symbol((process.env.NODE_ENV !== 'production') ? `ssrContext` : ``);
 
+const contextKey = Symbol();
 var NotificationGroup = defineComponent({
-    provide() {
-        return {
-            context: { group: this.group, position: this.position },
-        };
-    },
     props: {
         group: {
             type: String,
@@ -2618,10 +2547,16 @@ var NotificationGroup = defineComponent({
         position: {
             type: String,
             default: 'top',
-            validator(value) {
+            validator: function (value) {
                 return ['top', 'bottom'].includes(value);
             },
         },
+    },
+    setup(props) {
+        provide(contextKey, {
+            group: props.group,
+            position: props.position
+        });
     },
     render() {
         return this.$slots.default?.({
@@ -2630,6 +2565,120 @@ var NotificationGroup = defineComponent({
     },
 });
 
+var Notification = defineComponent$1({
+    props: {
+        maxNotifications: {
+            type: Number,
+            default: 10,
+        },
+        enter: {
+            type: String,
+            default: ''
+        },
+        enterFrom: {
+            type: String,
+            default: ''
+        },
+        enterTo: {
+            type: String,
+            default: ''
+        },
+        leave: {
+            type: String,
+            default: ''
+        },
+        leaveFrom: {
+            type: String,
+            default: ''
+        },
+        leaveTo: {
+            type: String,
+            default: ''
+        },
+        move: {
+            type: String,
+            default: ''
+        },
+        moveDelay: {
+            type: String,
+            default: ''
+        }
+    },
+    emits: ['close'],
+    setup(props, { emit }) {
+        const context = inject(contextKey, { group: '', position: 'top' });
+        const notifications = ref([]);
+        const notificationsByGroup = computed(() => notifications.value.filter((n) => n.group === context.group));
+        const sortedNotifications = computed(() => {
+            if (context.position === 'bottom') {
+                return [...notificationsByGroup.value]
+                    .slice(0, props.maxNotifications);
+            }
+            // if not bottom reverse the array
+            return [...notificationsByGroup.value]
+                .reverse()
+                .slice(0, props.maxNotifications);
+        });
+        const add = ({ notification, timeout }) => {
+            notifications.value.push(notification);
+            if (timeout !== Infinity) {
+                setTimeout(() => {
+                    close(notification.id);
+                }, timeout);
+            }
+        };
+        const close = (id) => {
+            events.emit('closeNotification', { id });
+        };
+        const handleClose = ({ id }) => {
+            emit('close', id);
+            remove(id);
+        };
+        const remove = (id) => {
+            notifications.value.splice(notifications.value.findIndex(n => n.id === id), 1);
+        };
+        return {
+            context,
+            notifications,
+            sortedNotifications,
+            notificationsByGroup,
+            add,
+            close,
+            remove,
+            handleClose
+        };
+    },
+    mounted() {
+        events.on('notify', this.add);
+        events.on('closeNotification', this.handleClose);
+    },
+    beforeUnmount() {
+        events.off('notify', this.add);
+        events.off('closeNotification', this.handleClose);
+    },
+    render() {
+        return h(TransitionGroup, {
+            'enter-active-class': this.notificationsByGroup.length > 1
+                ? [this.enter, this.moveDelay].join(' ')
+                : this.enter,
+            'enter-from-class': this.enterFrom,
+            'enter-to-class': this.enterTo,
+            'leave-active-class': this.leave,
+            'leave-from-class': this.leaveFrom,
+            'leave-to-class': this.leaveTo,
+            'move-class': this.move,
+        }, {
+            default: () => {
+                return this.$slots.default?.({
+                    notifications: this.sortedNotifications,
+                    close: this.close,
+                });
+            }
+        });
+    },
+});
+
+const DEFAULT_TIMEOUT = 3000;
 let count = 0;
 const generateId = () => {
     return count++;
@@ -2639,8 +2688,11 @@ function notify(notification, timeout) {
         notification.id = generateId();
     }
     notification.group = notification.group || '';
-    events.emit('notify', { notification, timeout });
-    return notification.id;
+    events.emit('notify', { notification, timeout: timeout ?? DEFAULT_TIMEOUT });
+    return {
+        id: notification.id,
+        close: () => events.emit('closeNotification', { id: notification.id })
+    };
 }
 
 /* eslint-disable vue/component-definition-name-casing */

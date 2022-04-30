@@ -1,3 +1,4 @@
+export declare const DEFAULT_TIMEOUT = 3000;
 export interface NotificationItem<T> {
     id?: number;
     title?: string;
@@ -8,4 +9,7 @@ export interface NotificationItem<T> {
     data?: T;
     clean?: boolean;
 }
-export declare function notify<T>(notification: NotificationItem<T>, timeout: number): number;
+export declare function notify<T>(notification: NotificationItem<T>, timeout?: number): {
+    id: number;
+    close: () => void;
+};

@@ -59,6 +59,9 @@ declare const _default: import("vue").DefineComponent<{
     }) => void;
     close: (id: number) => void;
     remove: (id: number) => void;
+    handleClose: ({ id }: {
+        id: number;
+    }) => void;
 }, unknown, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, "close"[], "close", import("vue").VNodeProps & import("vue").AllowedComponentProps & import("vue").ComponentCustomProps, Readonly<import("vue").ExtractPropTypes<{
     maxNotifications: {
         type: NumberConstructor;
