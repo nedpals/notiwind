@@ -5,6 +5,9 @@ type Events = {
   notify: {
     notification: NotificationItem<any>,
     timeout: number
+  },
+  closeNotification: {
+    id: number
   }
 }
 

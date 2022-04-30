@@ -1,11 +1,8 @@
-import { defineComponent } from "@vue/runtime-core"
+import { defineComponent, InjectionKey, provide } from "@vue/runtime-core"
+
+export const contextKey = Symbol() as InjectionKey<{ group: string, position: string }>;
 
 export default defineComponent({
-  provide() {
-    return {
-      context: { group: this.group, position: this.position },
-    }
-  },
   props: {
     group: {
       type: String,
@@ -14,10 +11,16 @@ export default defineComponent({
     position: {
       type: String,
       default: 'top',
-      validator(value: string) {
+      validator: function(this: void, value: string) {
         return ['top', 'bottom'].includes(value)
       },
     },
+  },
+  setup(props) {
+    provide(contextKey, {
+      group: props.group,
+      position: props.position
+    });
   },
   render() {
     return this.$slots.default?.({

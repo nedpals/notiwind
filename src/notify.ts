@@ -1,5 +1,7 @@
 import { events } from './events'
 
+export const DEFAULT_TIMEOUT = 3000
+
 export interface NotificationItem<T> {
   id?: number,
   title?: string,
@@ -17,11 +19,14 @@ const generateId = () => {
   return count++
 }
 
-export function notify<T>(notification: NotificationItem<T>, timeout: number): number {
+export function notify<T>(notification: NotificationItem<T>, timeout?: number): { id: number, close: () => void } {
   if (!notification.id) {
     notification.id = generateId()
   }
   notification.group = notification.group || ''
-  events.emit('notify', { notification, timeout })
-  return notification.id
+  events.emit('notify', { notification, timeout: timeout ?? DEFAULT_TIMEOUT })
+  return {
+    id: notification.id,
+    close: () => events.emit('closeNotification', { id: notification.id! })
+  }
 }

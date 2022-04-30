@@ -1,8 +1,7 @@
 import { h, defineComponent, inject, ref, computed, TransitionGroup } from 'vue'
 import { events } from '../events'
 import { NotificationItem } from '../notify'
-
-const DEFAULT_TIMEOUT = 3000
+import { contextKey } from './NotificationGroup'
 
 export default defineComponent({
   props: {
@@ -45,7 +44,7 @@ export default defineComponent({
   },
   emits: ['close'],
   setup(props, { emit }) {
-    const context = inject('context', { group: '', position: 'top' })
+    const context = inject(contextKey, { group: '', position: 'top' })
     const notifications = ref<NotificationItem<any>[]>([])
     const notificationsByGroup = computed<NotificationItem<any>[]>(() => notifications.value.filter((n) => n.group === context.group))
     const sortedNotifications = computed(() => {
@@ -62,13 +61,19 @@ export default defineComponent({
 
     const add = <T>({ notification, timeout }: { notification: NotificationItem<T>, timeout: number }) => {
       notifications.value.push(notification)
-      setTimeout(() => {
-        remove(notification.id!)
-      }, timeout || DEFAULT_TIMEOUT);
+      if (timeout !== Infinity) {
+        setTimeout(() => {
+          close(notification.id!)
+        }, timeout);
+      }
     };
 
     const close = (id: number) => {
-      emit('close')
+      events.emit('closeNotification', { id })
+    }
+
+    const handleClose = ({ id }: { id: number }) => {
+      emit('close', id)
       remove(id)
     }
 
@@ -83,11 +88,17 @@ export default defineComponent({
       notificationsByGroup,
       add,
       close,
-      remove
+      remove,
+      handleClose
     }
   },
   mounted() {
     events.on('notify', this.add)
+    events.on('closeNotification', this.handleClose)
+  },
+  beforeUnmount() {
+    events.off('notify', this.add)
+    events.off('closeNotification', this.handleClose)
   },
   render() {
     return h(
